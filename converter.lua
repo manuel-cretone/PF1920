@@ -1,7 +1,3 @@
-local binaryheap = require 'binaryheap'
-
-
--- table.unpack == unpack
 
 -- debug variables
 visited = {
