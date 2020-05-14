@@ -1,3 +1,4 @@
+-- life update bug
 io.stdout:setvbuf("no")
 table.unpack = unpack
 require "converter"
