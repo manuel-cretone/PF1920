@@ -217,11 +217,10 @@ function love.load()
     local image_width = image:getWidth()
     local image_height = image:getHeight()
 
+  --TODO: generalize indexes
     quads = {}
     for i=0,5 do
       for j=0,13 do
-        --The only reason this code is split up in multiple lines
-        --is so that it fits the page
         table.insert(quads, love.graphics.newQuad(j * width, i * height, width, height, image_width, image_height))
       end
     end
