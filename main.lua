@@ -1,17 +1,26 @@
---TODO: life update bug
 --TODO: usare funtore
+-- used to allow printing while the GUI is running
 io.stdout:setvbuf("no")
+-- used to enable lua 5.3 syntax for unpacking tables
 table.unpack = unpack
+-- import of input module
 require "input"
+
 -- https://sheepolution.com/learn/book/18
+-- tilesets: just insert the tileset path
 TILESET = "scifitiles-sheet.png"
+-- tilesets: just put the corresponding tile number
 NOWALL = 21
 WALL = 5
 PIT = 18
 ENTRANCE = 4
 EXIT = 59
+-- tilesets: size of a single tile
 width = 32
 height = 32
+-- tilesets: rows and columns of the tileset
+rows = 5
+cols = 13
 
 function draw_arrowhead(x, y, orientation)
   if orientation == "SOUTH" then
@@ -108,7 +117,7 @@ end
 
 function draw_moves(history, current_move)
   local i = 0
-  local current_x, current_y = find_initial(maze)
+  local current_x, current_y = start.entry_point.x, start.entry_point.y
   while i < current_move do
     i = i + 1
     if i == 1 then
@@ -195,24 +204,18 @@ function generate_tilemap(maze)
   
 end
 
+function reset_vitality() 
+  life = start.vitality
+  index = 0
+end
 
-
-
-function love.load()
-    --tick = require "tick"
-    life = 5
-    maze = {{"m", "m", "m", "m", "m", "m", "m"},
-            {"m", 3, 1, 7, "m", "p","m"},
-            {"m", "m", 3, 0, 8, 1, "m"},
-            {"m", 2, 1, "p", "m", "u", "m"},
-            {"m", "i", 3, "m", "m", "m", "m"},
-            {"m", 2, "m", 9, "m", "m", "m"}}
+function game_load()
     history = {{"U", 2},{"R", 1},{"U", 3},{"R", 0},{"R", -4},{"R", 1},{"D", 0}}
     current_move = 0
     index = 0
     
-    
-    
+    start, maze = init_game_data(filepath)
+    life = start.vitality
     
     image = love.graphics.newImage(TILESET)
     local image_width = image:getWidth()
@@ -220,34 +223,62 @@ function love.load()
 
   --TODO: generalize indexes
     quads = {}
-    for i=0,5 do
-      for j=0,13 do
+    for i=0, rows do
+      for j=0, cols do
         table.insert(quads, love.graphics.newQuad(j * width, i * height, width, height, image_width, image_height))
       end
     end
     
     
   tilemap = generate_tilemap(maze)
-    
-  love.graphics.setFont(love.graphics.newFont(12))
+end
+
+function love.load()
+  gamestate = "menu"
+  filepath = "maze.txt"
   love.graphics.setLineWidth(5)
   love.graphics.setLineStyle("rough")
   love.window.maximize()
 end
 
-function love.update(dt)
-  --tick.update(dt)
+function menu_update() end
+function game_update() 
   while index < current_move do
+    print(index)
     index = index + 1
     life = life + history[index][2]
   end
 end
 
-function love.draw()
-  
+
+function love.update(dt)
+  if gamestate == "menu" then
+    menu_update()
+  elseif gamestate == "game" then
+    game_update()
+  end
+end
+
+function menu_draw() 
+  love.graphics.setFont(love.graphics.newFont(48))
+  love.graphics.print("Insert the path of the maze to solve:", 40, 20)
+  love.graphics.rectangle("fill", 40, 120 , love.graphics.getWidth() - 80, 90)
+  love.graphics.setFont(love.graphics.newFont(72))
+  love.graphics.setColor(0,0,0,1)
+  love.graphics.print(filepath, 50, 120)
+  love.graphics.setColor(1,1,1,1)
+  love.graphics.rectangle("fill", love.graphics.getWidth()/2 - 150, 250, 300,100, 10,10)
+  love.graphics.setFont(love.graphics.newFont(48))
+  love.graphics.setColor(0,0,0,1)
+  love.graphics.print("CONFIRM", love.graphics.getWidth()/2 - 115, 250 + 25)
+  love.graphics.setColor(1,1,1,1)
+end
+
+function game_draw() 
+  love.graphics.setFont(love.graphics.newFont(12))
   love.graphics.print("Life: " .. life, width, height/2)
   
-  love.graphics.print("Keys: [SPACE] -> Execute one step \t [ENTER] -> Execute full path \t [BACKSPACE] -> Backtrack one step \t [DELETE] -> Backtrack all steps", width*3, height/2)
+  love.graphics.print("Keys: [SPACE] -> Execute one step \t [ENTER] -> Execute full path \t [BACKSPACE] -> Backtrack one step \t [DELETE] -> Backtrack all steps \t [ESCAPE] Go back to maze input", width*3, height/2)
   
   for i,row in ipairs(tilemap) do
     for j,tile in ipairs(row) do
@@ -262,18 +293,49 @@ function love.draw()
   end
   
   draw_moves(history, current_move)
+end
+
+function love.draw()
+  
+  if gamestate == "menu" then
+    menu_draw()
+  elseif gamestate == "game" then
+    game_draw()
+  end
   
 end
 
 
 function love.keypressed(key, scancode, isrepeat)
-   if key == "space" and current_move < #history then
-      current_move = current_move + 1
-    elseif key == "return" then
-      current_move = #history
-    elseif key == "backspace" then
-      current_move = current_move - 1
-    elseif key == "delete" then
-      current_move = 0
-   end
+   if gamestate == "game" then
+     if key == "space" and current_move < #history then
+        current_move = current_move + 1
+      elseif key == "return" then
+        current_move = #history
+      elseif key == "backspace" then
+        current_move = current_move - 1
+        reset_vitality()
+      elseif key == "delete" then
+        current_move = 0
+        reset_vitality()
+      elseif key == "escape" then
+        gamestate = "menu"
+     end
+    elseif gamestate == "menu" then
+      if key == "backspace" then
+        filepath = string.sub(filepath, 1, #filepath - 1)
+      end
+    end
+end
+
+function love.textinput(text)
+  filepath = filepath .. text
+end
+
+function love.mousepressed(x, y, button, istouch, presses)
+  --love.graphics.getWidth()/2 - 150, 250, 300,100
+  if gamestate == "menu" and x > love.graphics.getWidth()/2 - 150 and x < x + 300 and y > 250 and y < 250 + 100  then
+    game_load()
+    gamestate = "game"
+  end
 end
