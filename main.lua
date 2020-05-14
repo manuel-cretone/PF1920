@@ -2,7 +2,7 @@
 --TODO: usare funtore
 io.stdout:setvbuf("no")
 table.unpack = unpack
-require "converter"
+require "main"
 -- https://sheepolution.com/learn/book/18
 TILESET = "scifitiles-sheet.png"
 NOWALL = 21
