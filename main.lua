@@ -1,4 +1,5 @@
 --TODO: life update bug
+--TODO: usare funtore
 io.stdout:setvbuf("no")
 table.unpack = unpack
 require "converter"
