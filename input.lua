@@ -25,7 +25,8 @@ function build_maze(lines_table)
   for i=1,#lines-1 do
     row = {}
     -- need to skip first row: reserved for vitality
-    for cell in string.gmatch(lines[i + 1], "%S+") do
+    -- for cell in string.gmatch(lines[i + 1], "%S+") do
+    for cell in lines[i + 1]:gmatch"." do
       row[#row + 1] = cell
     end
     maze[i] = row
@@ -181,4 +182,4 @@ function write_path(history, maze, life)
   return maze, _write_path(history, x, y, life)
 end
 
--- start, maze = init_game_data("maze.txt")
+-- start, maze = init_game_data("mazes/maze_1.txt")
